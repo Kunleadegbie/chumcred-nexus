@@ -1,0 +1,12 @@
+streamlit
+supabase
+openai
+pdf2image
+pytesseract
+Pillow
+python-docx
+PyPDF2
+python-pptx
+ffmpeg-python
+python-dotenv
+ghostscript
