@@ -6,6 +6,12 @@ from docx import Document
 from PyPDF2 import PdfMerger
 from PIL import Image
 
+from pptx import Presentation
+from PyPDF2 import PdfReader
+import subprocess
+import tempfile
+import os
+
 from utils.ocr_config import configure_ocr
 
 configure_ocr()
@@ -155,3 +161,86 @@ elif tool == "Images to PDF":
 
         except Exception as e:
             st.error(f"Conversion failed: {e}")
+
+# ===================================
+# 4. PDF → POWERPOINT
+# ===================================
+
+def pdf_to_ppt(file_bytes):
+    reader = PdfReader(io.BytesIO(file_bytes))
+    prs = Presentation()
+
+    for page in reader.pages:
+        text = page.extract_text() or ""
+
+        slide_layout = prs.slide_layouts[1]
+        slide = prs.slides.add_slide(slide_layout)
+
+        title = slide.shapes.title
+        content = slide.placeholders[1]
+
+        title.text = "Extracted Content"
+        content.text = text[:1000]
+
+    ppt_bytes = io.BytesIO()
+    prs.save(ppt_bytes)
+    ppt_bytes.seek(0)
+
+    return ppt_bytes
+
+# ===================================
+# 5. POWERPOINT → PDF
+# ===================================
+def ppt_to_pdf(file):
+    with tempfile.TemporaryDirectory() as tmpdir:
+        input_path = os.path.join(tmpdir, file.name)
+
+        with open(input_path, "wb") as f:
+            f.write(file.read())
+
+        subprocess.run([
+            "soffice",
+            "--headless",
+            "--convert-to",
+            "pdf",
+            input_path,
+            "--outdir",
+            tmpdir
+        ])
+
+        output_file = input_path.replace(".pptx", ".pdf")
+
+        with open(output_file, "rb") as f:
+            return f.read()
+
+
+st.divider()
+st.subheader("📄 PDF ↔ PowerPoint")
+
+col1, col2 = st.columns(2)
+
+# PDF → PPT
+with col1:
+    pdf_file = st.file_uploader("PDF to PPT", type=["pdf"], key="pdf_to_ppt")
+
+    if pdf_file and st.button("Convert to PPT", key="btn_pdf_to_ppt", use_container_width=True):
+        ppt_file = pdf_to_ppt(pdf_file.read())
+
+        st.download_button(
+            "Download PPT",
+            ppt_file,
+            file_name="converted.pptx"
+        )
+
+# PPT → PDF
+with col2:
+    ppt_file = st.file_uploader("PPT to PDF", type=["pptx"], key="ppt_to_pdf")
+
+    if ppt_file and st.button("Convert to PDF", key="btn_ppt_to_pdf", use_container_width=True):
+        pdf_bytes = ppt_to_pdf(ppt_file)
+
+        st.download_button(
+            "Download PDF",
+            pdf_bytes,
+            file_name="converted.pdf"
+        )

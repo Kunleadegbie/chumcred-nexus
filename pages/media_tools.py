@@ -5,6 +5,7 @@ import os
 from PIL import Image
 import io
 
+
 from utils.ocr_config import configure_ocr
 
 configure_ocr()
@@ -233,3 +234,47 @@ elif tool == "PDF Compressor":
             compressed,
             file_name="compressed.pdf"
         )
+
+# ======================================
+# MERGE IMAGES
+# ======================================
+def merge_images_to_pdf(uploaded_files):
+    images = []
+
+    for file in uploaded_files:
+        image = Image.open(file).convert("RGB")
+        images.append(image)
+
+    pdf_bytes = io.BytesIO()
+
+    images[0].save(
+        pdf_bytes,
+        format="PDF",
+        save_all=True,
+        append_images=images[1:]
+    )
+
+    pdf_bytes.seek(0)
+    return pdf_bytes
+
+st.divider()
+st.subheader("🖼️ Merge Images")
+
+image_files = st.file_uploader(
+    "Upload images",
+    type=["jpg", "png"],
+    accept_multiple_files=True
+)
+
+if image_files and st.button("Merge to PDF", use_container_width=True):
+
+    pdf_file = merge_images_to_pdf(image_files)
+
+    st.success("Images merged successfully!")
+
+    st.download_button(
+        "Download PDF",
+        pdf_file,
+        file_name="merged_images.pdf",
+        mime="application/pdf"
+    )
