@@ -56,22 +56,38 @@ if tool == "PDF to Word (OCR)":
 
     if pdf and st.button("Convert to Word"):
 
+
         try:
-            pages = convert_from_bytes(
-                pdf.read(),
-                dpi=300,
-                poppler_path=POPPLER_PATH  # ignored in cloud
-            )
+            file_bytes = pdf.read()
 
             doc = Document()
-
             progress = st.progress(0)
 
-            for i, page in enumerate(pages):
-                text = pytesseract.image_to_string(page)
-                doc.add_paragraph(text)
+            # STEP 1: Try OCR (with Poppler)
+            try:
+                pages = convert_from_bytes(
+                    file_bytes,
+                    dpi=300,
+                    poppler_path=POPPLER_PATH
+                )
 
-                progress.progress((i + 1) / len(pages))
+                for i, page in enumerate(pages):
+                    text = pytesseract.image_to_string(page)
+                    doc.add_paragraph(text)
+
+                    progress.progress((i + 1) / len(pages))
+
+            # STEP 2: FALLBACK (if Poppler fails)
+            except Exception as ocr_error:
+                st.warning("OCR not available — switching to basic extraction")
+
+                reader = PdfReader(io.BytesIO(file_bytes))
+
+                for i, page in enumerate(reader.pages):
+                    text = page.extract_text() or ""
+                    doc.add_paragraph(text)
+
+                    progress.progress((i + 1) / len(reader.pages))
 
             buffer = io.BytesIO()
             doc.save(buffer)
@@ -85,7 +101,7 @@ if tool == "PDF to Word (OCR)":
             )
 
         except Exception as e:
-            st.error(f"OCR failed: {e}")
+            st.error(f"Conversion failed: {e}")
 
 # ===================================
 # 2. MERGE PDFs
