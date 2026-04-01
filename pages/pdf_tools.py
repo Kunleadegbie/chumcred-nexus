@@ -12,6 +12,10 @@ import subprocess
 import tempfile
 import os
 
+import pytesseract
+
+pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
+
 from utils.ocr_config import configure_ocr
 
 configure_ocr()
