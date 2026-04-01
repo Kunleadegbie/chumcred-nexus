@@ -78,8 +78,10 @@ if tool == "PDF to Word (OCR)":
 
             # STEP 2: FALLBACK (if Poppler fails)
             except Exception as ocr_error:
-                st.warning("OCR not available — switching to basic extraction")
+                st.error("OCR FAILED — DEBUG INFO BELOW")
+                st.code(str(ocr_error))
 
+            
                 reader = PdfReader(io.BytesIO(file_bytes))
 
                 for i, page in enumerate(reader.pages):
