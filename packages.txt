@@ -2,6 +2,7 @@ poppler-utils
 tesseract-ocr
 ffmpeg
 ghostscript
-LibreOffice
+libreoffice
+
 
 

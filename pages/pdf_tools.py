@@ -68,7 +68,6 @@ if tool == "PDF to Word (OCR)":
                 pages = convert_from_bytes(
                     file_bytes,
                     dpi=300,
-                    poppler_path=POPPLER_PATH
                 )
 
                 for i, page in enumerate(pages):
@@ -122,6 +121,13 @@ elif tool == "Merge PDFs":
 
             for f in files:
                 merger.append(io.BytesIO(f.read()))
+            
+
+            # 🚨 ADD THIS BLOCK HERE
+            if len(doc.paragraphs) == 0:
+                st.error("This document appears to be scanned and OCR is not available.")
+                st.info("Please enable OCR (Poppler + Tesseract) or upload a text-based PDF.")
+                st.stop()
 
             buffer = io.BytesIO()
             merger.write(buffer)
