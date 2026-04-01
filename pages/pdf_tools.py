@@ -16,6 +16,9 @@ import pytesseract
 
 pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
 
+import os
+st.write("Tesseract exists:", os.path.exists("/usr/bin/tesseract"))
+
 from utils.ocr_config import configure_ocr
 
 configure_ocr()
