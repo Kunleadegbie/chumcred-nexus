@@ -4,6 +4,10 @@ from docx import Document
 import io
 import fitz  # PyMuPDF
 
+from utils.navigation import render_sidebar
+
+render_sidebar()
+
 # ===================================
 # PAGE TITLE
 # ===================================
