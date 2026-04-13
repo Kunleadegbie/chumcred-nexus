@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 
 from utils.navigation import render_sidebar
-from utils.feature_guard import require_logged_in_user
+from utils.feature_guard import require_logged_in_user, is_admin_user
 from services.supabase_client import supabase
 
 render_sidebar()
@@ -12,7 +12,7 @@ user = require_logged_in_user()
 # -----------------------------------
 # ADMIN GUARD
 # -----------------------------------
-if getattr(user, "email", None) != "admin@chumcred.com":
+if not is_admin_user(user):
     st.error("Access denied. Admin only.")
     st.stop()
 
@@ -86,7 +86,6 @@ def get_user_info(user_id: str):
 
 def approve_payment_and_activate_plan(payment_id: str, plan_code: str, admin_note: str = ""):
     try:
-        # get payment first
         payment_response = (
             supabase.table("payments")
             .select("id, user_id, subscription_request_id")
@@ -102,7 +101,6 @@ def approve_payment_and_activate_plan(payment_id: str, plan_code: str, admin_not
         target_user_id = payment["user_id"]
         subscription_request_id = payment.get("subscription_request_id")
 
-        # approve payment
         (
             supabase.table("payments")
             .update(
@@ -117,7 +115,6 @@ def approve_payment_and_activate_plan(payment_id: str, plan_code: str, admin_not
             .execute()
         )
 
-        # approve subscription request if linked
         if subscription_request_id:
             (
                 supabase.table("subscription_requests")
@@ -132,7 +129,6 @@ def approve_payment_and_activate_plan(payment_id: str, plan_code: str, admin_not
                 .execute()
             )
 
-        # update user plan
         (
             supabase.table("users")
             .update({"plan_code": plan_code})
@@ -140,7 +136,6 @@ def approve_payment_and_activate_plan(payment_id: str, plan_code: str, admin_not
             .execute()
         )
 
-        # update access control
         (
             supabase.table("user_access_control")
             .update(
@@ -155,7 +150,6 @@ def approve_payment_and_activate_plan(payment_id: str, plan_code: str, admin_not
             .execute()
         )
 
-        # admin audit trail
         supabase.table("admin_actions").insert(
             {
                 "admin_user_id": user.id,
@@ -305,7 +299,7 @@ for row in display_rows:
     payment_labels.append(label)
     payment_lookup[label] = row
 
-selected_label = st.selectbox("Select payment", payment_labels)
+selected_label = st.selectbox("Select payment", payment_labels, key="sub_approval_select")
 selected_payment = payment_lookup[selected_label]
 
 st.markdown(f"**User:** {selected_payment.get('name') or 'No Name'}")
@@ -321,7 +315,7 @@ receipt_url = selected_payment.get("receipt_url")
 if receipt_url:
     st.link_button("Open Receipt", receipt_url)
 
-selected_plan_label = st.selectbox("Assign plan after approval", list(plan_options.keys()))
+selected_plan_label = st.selectbox("Assign plan after approval", list(plan_options.keys()), key="sub_approval_plan")
 selected_plan_code = plan_options[selected_plan_label]
 
 admin_note = st.text_area("Admin note", key="payment_admin_note")

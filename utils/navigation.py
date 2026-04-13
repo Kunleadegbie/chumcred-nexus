@@ -1,5 +1,6 @@
 import streamlit as st
 
+
 def render_sidebar():
 
     with st.sidebar:
@@ -68,8 +69,11 @@ def render_sidebar():
         if st.button("💳 Subscription", use_container_width=True, key="nav_sub"):
             st.switch_page("pages/subscription.py")
 
-        
         st.divider()
+
+        # ===============================
+        # ADMIN
+        # ===============================
         st.markdown("### 🛠️ Admin")
 
         if st.button("🛠️ Admin Panel", use_container_width=True, key="nav_admin_panel"):
@@ -79,6 +83,7 @@ def render_sidebar():
             st.switch_page("pages/subscription_approvals.py")
 
         st.divider()
+
         if st.button("🚪 Logout", use_container_width=True, key="nav_logout"):
             st.session_state.clear()
             st.switch_page("app.py")

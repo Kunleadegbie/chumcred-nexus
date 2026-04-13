@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 
 from utils.navigation import render_sidebar
-from utils.feature_guard import require_logged_in_user
+from utils.feature_guard import require_logged_in_user, is_admin_user
 from services.access_service import (
     get_all_users_overview,
     block_user,
@@ -17,7 +17,7 @@ user = require_logged_in_user()
 # -----------------------------------
 # ADMIN GUARD
 # -----------------------------------
-if getattr(user, "email", None) != "admin@chumcred.com":
+if not is_admin_user(user):
     st.error("Access denied. Admin only.")
     st.stop()
 
@@ -33,6 +33,7 @@ def load_users():
     except Exception as e:
         st.error(f"Failed to load users: {e}")
         return []
+
 
 users_data = load_users()
 
@@ -103,7 +104,7 @@ user_options = [
     for _, row in df.iterrows()
 ]
 
-selected_label = st.selectbox("Select user", user_options)
+selected_label = st.selectbox("Select user", user_options, key="admin_user_select")
 
 selected_row = df.iloc[user_options.index(selected_label)]
 target_user_id = selected_row["id"]
@@ -141,9 +142,7 @@ with tab1:
             except Exception as e:
                 st.error(f"Failed to unblock user: {e}")
 
-    st.info(
-        f"Current status: {'Blocked' if is_currently_blocked else 'Active'}"
-    )
+    st.info(f"Current status: {'Blocked' if is_currently_blocked else 'Active'}")
 
 # -----------------------------------
 # TRIAL PERIOD TAB
