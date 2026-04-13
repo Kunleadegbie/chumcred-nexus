@@ -2,16 +2,13 @@ import streamlit as st
 from services.ai_service import summarize
 
 from utils.ocr_config import configure_ocr
+from utils.navigation import render_sidebar
+from utils.feature_guard import enforce_feature_access, consume_feature_usage
 
 configure_ocr()
-
-from utils.navigation import render_sidebar
-
 render_sidebar()
 
-from utils.feature_guard import enforce_feature_access
-
-user = enforce_feature_access("ai_chat")
+user = enforce_feature_access("ai_summary")
 
 st.title("AI Document Summarizer")
 
@@ -20,13 +17,7 @@ uploaded_file = st.file_uploader(
     type=["txt", "pdf", "docx"]
 )
 
-from utils.feature_guard import consume_feature_usage
-
-consume_feature_usage("ai_chat")
-
 def extract_text(file):
-    import io
-
     if file.type == "text/plain":
         return file.read().decode("utf-8", errors="ignore")
 
@@ -58,10 +49,11 @@ if uploaded_file:
 
     st.success("Document loaded successfully")
 
-    if st.button("Summarize Document"):
+    if st.button("Summarize Document", key="ai_summary_btn"):
+
+        consume_feature_usage("ai_summary")
 
         with st.spinner("AI is summarizing..."):
-
             result = summarize(text)
 
         st.subheader("Summary")

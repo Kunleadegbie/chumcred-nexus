@@ -10,17 +10,15 @@ import requests
 
 from utils.ocr_config import configure_ocr
 from utils.navigation import render_sidebar
-
-
-from utils.feature_guard import enforce_feature_access
-
-user = enforce_feature_access("ai_chat")
+from utils.feature_guard import enforce_feature_access, consume_feature_usage
 
 # -----------------------------------
 # CONFIG
 # -----------------------------------
 configure_ocr()
 render_sidebar()
+
+user = enforce_feature_access("ai_chat")
 
 client = OpenAI(api_key=os.getenv("OPENAI_API_KEY"))
 
@@ -53,7 +51,6 @@ file_bytes = None
 file_name = None
 file_type = None
 
-# PRIORITY: Uploaded file overrides vault
 if uploaded_file:
     file_bytes = uploaded_file.read()
     file_name = uploaded_file.name
@@ -63,13 +60,10 @@ if uploaded_file:
 elif vault_url:
     try:
         response = requests.get(vault_url)
-
         file_bytes = response.content
         file_name = vault_name or "Vault File"
         file_type = "application/pdf"
-
         st.success(f"Loaded from Vault: {file_name}")
-
     except Exception as e:
         st.error(f"Failed to load file from Vault: {e}")
 
@@ -77,51 +71,34 @@ elif vault_url:
 # VALIDATE FILE
 # -----------------------------------
 if file_bytes:
-
-    if not file_bytes.startswith(b"%PDF"):
+    if file_type == "application/pdf" and not file_bytes.startswith(b"%PDF"):
         st.error("❌ Invalid PDF file from Vault")
-
         st.info("""
 This means:
 - The Vault URL is not returning a real PDF
 - Likely a permissions or storage issue
         """)
-
         st.stop()
-
 else:
     st.warning("Upload a file or select one from Vault")
     st.stop()
-
-from utils.feature_guard import consume_feature_usage
-
-consume_feature_usage("ai_chat")
 
 # -----------------------------------
 # TEXT EXTRACTION
 # -----------------------------------
 def extract_text(file_bytes, file_type):
-
     text = ""
 
-    # -----------------------------------
-    # PDF HANDLING
-    # -----------------------------------
     if file_type == "application/pdf":
-
-        # STEP 1: Try native PDF extraction
         try:
             reader = PdfReader(io.BytesIO(file_bytes))
             for page in reader.pages:
                 text += page.extract_text() or ""
-        except Exception as e:
-            st.warning("PDF text extraction failed")
+        except Exception:
+            pass
 
-        # STEP 2: OCR fallback if needed
         if len(text.strip()) < 100:
-
             st.info("Using OCR fallback...")
-
             try:
                 import platform
 
@@ -143,9 +120,6 @@ def extract_text(file_bytes, file_type):
                 st.warning("OCR fallback failed — continuing with available text")
                 st.warning(str(e))
 
-    # -----------------------------------
-    # IMAGE HANDLING
-    # -----------------------------------
     else:
         try:
             image = Image.open(io.BytesIO(file_bytes))
@@ -158,7 +132,6 @@ def extract_text(file_bytes, file_type):
 # -----------------------------------
 # TEXT CHUNKING + RETRIEVAL
 # -----------------------------------
-
 def chunk_text(text, chunk_size=1000):
     words = text.split()
     return [
@@ -168,7 +141,6 @@ def chunk_text(text, chunk_size=1000):
 
 
 def get_relevant_chunks(chunks, question):
-
     scored = []
 
     for chunk in chunks:
@@ -195,7 +167,7 @@ if file_bytes:
 
     if not st.session_state.doc_ready:
 
-        if st.button("📄 Process Document", use_container_width=True):
+        if st.button("📄 Process Document", use_container_width=True, key="ai_chat_process_doc"):
 
             with st.spinner("Extracting document text..."):
 
@@ -218,13 +190,15 @@ if st.session_state.doc_ready:
 
     st.markdown("### Ask questions about your document")
 
-    question = st.text_input("Enter your question")
+    question = st.text_input("Enter your question", key="ai_chat_question")
 
-    if st.button("🤖 Ask AI", use_container_width=True):
+    if st.button("🤖 Ask AI", use_container_width=True, key="ai_chat_ask_btn"):
 
         if not question:
             st.warning("Please enter a question")
             st.stop()
+
+        consume_feature_usage("ai_chat")
 
         relevant_text = get_relevant_chunks(
             st.session_state.chunks,
@@ -257,14 +231,12 @@ INSTRUCTIONS:
         })
 
         with st.spinner("Thinking..."):
-
             response = client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=messages
             )
 
         answer = response.choices[0].message.content
-
         st.session_state.chat_history.append((question, answer))
 
 # -----------------------------------

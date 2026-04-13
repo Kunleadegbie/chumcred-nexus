@@ -2,22 +2,15 @@ import streamlit as st
 from services.ai_service import translate
 
 from utils.ocr_config import configure_ocr
+from utils.navigation import render_sidebar
+from utils.feature_guard import enforce_feature_access, consume_feature_usage
 
 configure_ocr()
-
-from utils.navigation import render_sidebar
-
 render_sidebar()
 
-from utils.feature_guard import enforce_feature_access
-
-user = enforce_feature_access("ai_chat")
+user = enforce_feature_access("ai_translate")
 
 st.title("🌍 AI Translator")
-
-# -----------------------------------
-# LANGUAGE OPTIONS
-# -----------------------------------
 
 languages = [
     "Auto Detect",
@@ -35,29 +28,17 @@ languages = [
 col1, col2 = st.columns(2)
 
 with col1:
-    source_lang = st.selectbox("From", languages)
+    source_lang = st.selectbox("From", languages, key="ai_translate_source")
 
 with col2:
-    target_lang = st.selectbox("To", languages[1:])  # exclude Auto Detect
-
-# -----------------------------------
-# INPUT OPTIONS
-# -----------------------------------
+    target_lang = st.selectbox("To", languages[1:], key="ai_translate_target")
 
 uploaded_file = st.file_uploader(
     "Upload Document (Optional)",
     type=["txt", "pdf", "docx"]
 )
 
-text_input = st.text_area("Or paste text manually")
-
-from utils.feature_guard import consume_feature_usage
-
-consume_feature_usage("ai_chat")
-
-# -----------------------------------
-# TEXT EXTRACTION
-# -----------------------------------
+text_input = st.text_area("Or paste text manually", key="ai_translate_text")
 
 def extract_text(file):
     if file.type == "text/plain":
@@ -78,29 +59,20 @@ def extract_text(file):
 
     return ""
 
-# -----------------------------------
-# DETERMINE INPUT TEXT
-# -----------------------------------
-
 final_text = ""
 
 if uploaded_file:
     final_text = extract_text(uploaded_file)
-
 elif text_input:
     final_text = text_input
 
-# -----------------------------------
-# TRANSLATION LOGIC
-# -----------------------------------
-
 if final_text:
 
-    if st.button("Translate"):
+    if st.button("Translate", key="ai_translate_btn"):
+
+        consume_feature_usage("ai_translate")
 
         with st.spinner("Translating..."):
-
-            # Build prompt dynamically
             if source_lang == "Auto Detect":
                 prompt = f"Translate the following text to {target_lang}:\n\n{final_text}"
             else:

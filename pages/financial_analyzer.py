@@ -2,16 +2,13 @@ import streamlit as st
 from services.ai_service import summarize
 
 from utils.ocr_config import configure_ocr
+from utils.navigation import render_sidebar
+from utils.feature_guard import enforce_feature_access, consume_feature_usage
 
 configure_ocr()
-
-from utils.navigation import render_sidebar
-
 render_sidebar()
 
-from utils.feature_guard import enforce_feature_access
-
-user = enforce_feature_access("ai_chat")
+user = enforce_feature_access("financial_analyzer")
 
 st.title("AI Financial Document Analyzer")
 
@@ -19,10 +16,6 @@ uploaded_file = st.file_uploader(
     "Upload Financial Document",
     type=["txt", "pdf", "docx"]
 )
-
-from utils.feature_guard import consume_feature_usage
-
-consume_feature_usage("ai_chat")
 
 def extract_text(file):
     if file.type == "text/plain":
@@ -48,7 +41,13 @@ if uploaded_file:
 
     text = extract_text(uploaded_file)
 
-    if st.button("Analyze Financials"):
+    if not text.strip():
+        st.error("Could not extract text from document")
+        st.stop()
+
+    if st.button("Analyze Financials", key="financial_analyzer_btn"):
+
+        consume_feature_usage("financial_analyzer")
 
         prompt = f"""
         Analyze this financial document and provide:

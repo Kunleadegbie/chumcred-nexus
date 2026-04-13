@@ -1,5 +1,12 @@
 import streamlit as st
 from services.access_service import get_user_access_status, check_and_increment_feature_usage
+from services.supabase_client import supabase
+
+
+ADMIN_EMAILS = {
+    "chumcred@gmail.com",
+    "admin@chumcred.com",
+}
 
 
 def require_logged_in_user():
@@ -11,8 +18,31 @@ def require_logged_in_user():
     return user
 
 
+def _is_admin_user(user) -> bool:
+    email = getattr(user, "email", None)
+    if email in ADMIN_EMAILS:
+        return True
+
+    try:
+        response = (
+            supabase.table("users")
+            .select("role")
+            .eq("id", user.id)
+            .execute()
+        )
+        if response.data and response.data[0].get("role") == "admin":
+            return True
+    except Exception:
+        pass
+
+    return False
+
+
 def enforce_feature_access(feature_name: str):
     user = require_logged_in_user()
+
+    if _is_admin_user(user):
+        return user
 
     access = get_user_access_status(user.id)
     if not access:
@@ -33,6 +63,14 @@ def enforce_feature_access(feature_name: str):
 
 def consume_feature_usage(feature_name: str):
     user = require_logged_in_user()
+
+    if _is_admin_user(user):
+        return {
+            "allowed": True,
+            "usage_count": 0,
+            "daily_limit": 999999,
+            "message": "Admin bypass"
+        }
 
     result = check_and_increment_feature_usage(user.id, feature_name)
     if not result:
