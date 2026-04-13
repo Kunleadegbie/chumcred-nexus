@@ -1,4 +1,38 @@
 import streamlit as st
+from services.supabase_client import supabase
+
+
+ADMIN_EMAILS = {
+    "chumcred@gmail.com",
+    "admin@chumcred.com",
+}
+
+
+def is_admin_user():
+    user = st.session_state.get("user")
+    if not user:
+        return False
+
+    email = getattr(user, "email", None)
+
+    if email in ADMIN_EMAILS:
+        return True
+
+    try:
+        response = (
+            supabase.table("users")
+            .select("role")
+            .eq("id", user.id)
+            .execute()
+        )
+
+        if response.data and response.data[0].get("role") == "admin":
+            return True
+
+    except Exception:
+        pass
+
+    return False
 
 
 def render_sidebar():
@@ -69,18 +103,18 @@ def render_sidebar():
         if st.button("💳 Subscription", use_container_width=True, key="nav_sub"):
             st.switch_page("pages/subscription.py")
 
-        st.divider()
-
         # ===============================
-        # ADMIN
+        # ADMIN ONLY
         # ===============================
-        st.markdown("### 🛠️ Admin")
+        if is_admin_user():
+            st.divider()
+            st.markdown("### 🛠️ Admin")
 
-        if st.button("🛠️ Admin Panel", use_container_width=True, key="nav_admin_panel"):
-            st.switch_page("pages/admin.py")
+            if st.button("🛠️ Admin Panel", use_container_width=True, key="nav_admin_panel"):
+                st.switch_page("pages/admin.py")
 
-        if st.button("💳 Subscription Approvals", use_container_width=True, key="nav_sub_approvals"):
-            st.switch_page("pages/subscription_approvals.py")
+            if st.button("💳 Subscription Approvals", use_container_width=True, key="nav_sub_approvals"):
+                st.switch_page("pages/subscription_approvals.py")
 
         st.divider()
 
