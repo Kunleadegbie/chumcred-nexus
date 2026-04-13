@@ -19,7 +19,8 @@ def sign_up(email, password, full_name=""):
                     "full_name": full_name,
                     "role": "user",
                     "plan_code": "trial",
-                }
+                },
+                on_conflict="id"
             ).execute()
 
             create_default_trial_access(response.user.id, 14)
@@ -30,14 +31,29 @@ def sign_up(email, password, full_name=""):
         return {"error": str(e)}
 
 
-def sign_in(email, password):
+def sign_up(email, password, full_name=""):
     try:
-        response = supabase.auth.sign_in_with_password(
+        response = supabase.auth.sign_up(
             {
                 "email": email,
                 "password": password
             }
         )
+
+        if getattr(response, "user", None):
+            supabase.table("users").upsert(
+                {
+                    "id": response.user.id,
+                    "email": email,
+                    "full_name": full_name,
+                    "role": "user",
+                    "plan_code": "trial",
+                },
+                on_conflict="id"
+            ).execute()
+
+            create_default_trial_access(response.user.id, 14)
+
         return response
 
     except Exception as e:
