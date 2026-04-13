@@ -9,12 +9,20 @@ from utils.navigation import render_sidebar
 
 render_sidebar()
 
+from utils.feature_guard import enforce_feature_access
+
+user = enforce_feature_access("ai_chat")
+
 st.title("AI Document Summarizer")
 
 uploaded_file = st.file_uploader(
     "Upload Document",
     type=["txt", "pdf", "docx"]
 )
+
+from utils.feature_guard import consume_feature_usage
+
+consume_feature_usage("ai_chat")
 
 def extract_text(file):
     import io

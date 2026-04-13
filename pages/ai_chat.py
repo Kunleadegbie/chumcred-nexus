@@ -11,6 +11,11 @@ import requests
 from utils.ocr_config import configure_ocr
 from utils.navigation import render_sidebar
 
+
+from utils.feature_guard import enforce_feature_access
+
+user = enforce_feature_access("ai_chat")
+
 # -----------------------------------
 # CONFIG
 # -----------------------------------
@@ -87,6 +92,10 @@ This means:
 else:
     st.warning("Upload a file or select one from Vault")
     st.stop()
+
+from utils.feature_guard import consume_feature_usage
+
+consume_feature_usage("ai_chat")
 
 # -----------------------------------
 # TEXT EXTRACTION

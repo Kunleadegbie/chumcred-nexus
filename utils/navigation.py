@@ -68,6 +68,9 @@ def render_sidebar():
         if st.button("💳 Subscription", use_container_width=True, key="nav_sub"):
             st.switch_page("pages/subscription.py")
 
+        if st.button("💳 Subscription Approvals", use_container_width=True, key="nav_sub_approvals"):
+            st.switch_page("pages/subscription_approvals.py")
+
         if st.button("🚪 Logout", use_container_width=True, key="nav_logout"):
             st.session_state.clear()
             st.switch_page("app.py")

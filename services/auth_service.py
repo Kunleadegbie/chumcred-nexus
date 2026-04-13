@@ -1,30 +1,33 @@
 from services.supabase_client import supabase
+from services.access_service import create_default_trial_access
 
-from services.supabase_client import supabase
 
+def sign_up(email, password, full_name=""):
 
-def sign_up(email, password):
-
-    response = supabase.auth.sign_up({
-        "email": email,
-        "password": password
-    })
-
-    if response.user:
-
-        # Insert into users table
-        supabase.table("users").insert({
-            "id": response.user.id,
+    response = supabase.auth.sign_up(
+        {
             "email": email,
-            "role": "user",
-            "plan": "starter",
-            "credits_balance": 20
-        }).execute()
+            "password": password
+        }
+    )
+
+    if getattr(response, "user", None):
+
+        # Upsert user profile into app users table
+        supabase.table("users").upsert(
+            {
+                "id": response.user.id,
+                "email": email,
+                "full_name": full_name,
+                "role": "user",
+                "plan_code": "trial",
+            }
+        ).execute()
+
+        # Create default trial access record
+        create_default_trial_access(response.user.id, 14)
 
     return response
-
-
-from services.supabase_client import supabase
 
 
 def sign_in(email, password):
@@ -36,12 +39,10 @@ def sign_in(email, password):
                 "password": password
             }
         )
-
         return response
 
     except Exception as e:
         return {"error": str(e)}
-
 
 
 def get_current_user(session):

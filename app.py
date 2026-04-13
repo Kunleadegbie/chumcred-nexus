@@ -57,9 +57,6 @@ def render_sidebar():
 # -----------------------------------
 def render_about_page():
 
-    # -----------------------------------
-    # HERO SECTION
-    # -----------------------------------
     st.markdown("""
     <style>
     .hero {
@@ -100,9 +97,6 @@ def render_about_page():
 
     st.divider()
 
-    # -----------------------------------
-    # VALUE PROPOSITION
-    # -----------------------------------
     col1, col2, col3 = st.columns(3)
 
     with col1:
@@ -127,13 +121,9 @@ def render_about_page():
 
     st.divider()
 
-    # -----------------------------------
-    # WHO IT IS FOR
-    # -----------------------------------
     st.subheader("🎯 Who is Nexus for?")
 
     col1, col2, col3, col4 = st.columns(4)
-
     col1.markdown("✔ Business Analysts")
     col2.markdown("✔ Financial Professionals")
     col3.markdown("✔ Entrepreneurs")
@@ -141,9 +131,6 @@ def render_about_page():
 
     st.divider()
 
-    # -----------------------------------
-    # WHY NEXUS
-    # -----------------------------------
     st.subheader("⚡ Why Chumcred Nexus?")
 
     col1, col2 = st.columns(2)
@@ -164,9 +151,6 @@ def render_about_page():
 
     st.divider()
 
-    # -----------------------------------
-    # PRICING
-    # -----------------------------------
     st.subheader("💰 Pricing Plans")
 
     col1, col2, col3 = st.columns(3)
@@ -176,7 +160,7 @@ def render_about_page():
         <div class="pricing">
         <h3>Starter</h3>
         <p>Basic AI tools</p>
-        <p>Limited credits</p>
+        <p>Limited access during trial</p>
         </div>
         """, unsafe_allow_html=True)
 
@@ -200,14 +184,12 @@ def render_about_page():
 
     st.divider()
 
-    # -----------------------------------
-    # CTA
-    # -----------------------------------
     st.markdown("### 🚀 Ready to get started?")
 
     if st.button("👉 Go to Login / Create Account", use_container_width=True):
         st.session_state.has_seen_about = True
         st.rerun()
+
 # -----------------------------------
 # LOGIN PAGE
 # -----------------------------------
@@ -216,13 +198,13 @@ def render_login_page():
     render_login_header()
 
     st.markdown("### Login to continue")
-    mode = st.radio("", ["Login", "Register"], horizontal=True)
-
-    email = st.text_input("Email")
-    password = st.text_input("Password", type="password")
+    mode = st.radio("", ["Login", "Register"], horizontal=True, key="auth_mode")
 
     if mode == "Login":
-        if st.button("Login", use_container_width=True):
+        email = st.text_input("Email", key="login_email")
+        password = st.text_input("Password", type="password", key="login_password")
+
+        if st.button("Login", use_container_width=True, key="login_btn"):
 
             session = sign_in(email, password)
 
@@ -238,9 +220,13 @@ def render_login_page():
                 st.error("Invalid login")
 
     else:
-        if st.button("Create Account", use_container_width=True):
+        full_name = st.text_input("Full Name", key="register_full_name")
+        email = st.text_input("Email", key="register_email")
+        password = st.text_input("Password", type="password", key="register_password")
 
-            res = sign_up(email, password)
+        if st.button("Create Account", use_container_width=True, key="register_btn"):
+
+            res = sign_up(email, password, full_name)
 
             if isinstance(res, dict) and "error" in res:
                 st.error(res["error"])
@@ -256,20 +242,14 @@ def render_login_page():
 # -----------------------------------
 user = st.session_state.get("user")
 
-# 🔐 LOGGED-IN USER → GO TO APP
 if user:
     render_sidebar()
     st.switch_page("pages/dashboard.py")
 
-# 👤 NOT LOGGED IN
 else:
-
-    # FIRST TIME → SHOW ABOUT PAGE
     if not st.session_state.has_seen_about:
         render_about_page()
         st.stop()
-
-    # RETURNING USER → SHOW LOGIN
     else:
         render_login_page()
         st.stop()

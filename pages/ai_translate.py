@@ -9,6 +9,10 @@ from utils.navigation import render_sidebar
 
 render_sidebar()
 
+from utils.feature_guard import enforce_feature_access
+
+user = enforce_feature_access("ai_chat")
+
 st.title("🌍 AI Translator")
 
 # -----------------------------------
@@ -46,6 +50,10 @@ uploaded_file = st.file_uploader(
 )
 
 text_input = st.text_area("Or paste text manually")
+
+from utils.feature_guard import consume_feature_usage
+
+consume_feature_usage("ai_chat")
 
 # -----------------------------------
 # TEXT EXTRACTION

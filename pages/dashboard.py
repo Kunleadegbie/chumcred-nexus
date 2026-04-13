@@ -21,6 +21,20 @@ if not user:
     st.switch_page("app.py")  # or your login page
     st.stop()
 
+
+from services.access_service import get_trial_banner_data
+
+banner = get_trial_banner_data(user.id)
+
+if banner and banner.get("plan_code") == "trial":
+    trial_end = banner.get("trial_end_date")
+    st.info(
+        f"You are currently using the Free Trial version of Chumcred Nexus. "
+        f"Your trial is valid until {trial_end}. "
+        f"AI usage is limited to 1 use per feature per day. "
+        f"You may continue with the freemium version during the trial period or upgrade to a paid plan."
+    )
+
 # -----------------------------------
 # USER INFO
 # -----------------------------------
