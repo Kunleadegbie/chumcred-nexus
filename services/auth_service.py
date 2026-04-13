@@ -31,29 +31,14 @@ def sign_up(email, password, full_name=""):
         return {"error": str(e)}
 
 
-def sign_up(email, password, full_name=""):
+def sign_in(email, password):
     try:
-        response = supabase.auth.sign_up(
+        response = supabase.auth.sign_in_with_password(
             {
                 "email": email,
                 "password": password
             }
         )
-
-        if getattr(response, "user", None):
-            supabase.table("users").upsert(
-                {
-                    "id": response.user.id,
-                    "email": email,
-                    "full_name": full_name,
-                    "role": "user",
-                    "plan_code": "trial",
-                },
-                on_conflict="id"
-            ).execute()
-
-            create_default_trial_access(response.user.id, 14)
-
         return response
 
     except Exception as e:
