@@ -226,6 +226,10 @@ def render_login_page():
 
         if st.button("Create Account", use_container_width=True, key="register_btn"):
 
+            if len(password) < 6:
+                st.error("Password must be at least 6 characters.")
+                st.stop()
+
             res = sign_up(email, password, full_name)
 
             if isinstance(res, dict) and "error" in res:
@@ -236,6 +240,7 @@ def render_login_page():
 
             else:
                 st.error("Signup failed")
+
 
 # -----------------------------------
 # MAIN FLOW CONTROL
