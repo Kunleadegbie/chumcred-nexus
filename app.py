@@ -236,7 +236,11 @@ def render_login_page():
                 st.error(res["error"])
 
             elif res and getattr(res, "user", None):
-                st.success("Account created. You can now login.")
+                st.success(
+                    "Account created successfully. Please check your email and click the confirmation link before logging in."
+                )
+                st.info("If you do not see the email, check your spam or junk folder.")
+
 
             else:
                 st.error("Signup failed")
