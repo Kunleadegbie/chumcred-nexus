@@ -10,6 +10,5 @@ python-pptx
 ffmpeg-python
 python-dotenv
 ghostscript
-pymupdf
-
+PyMuPDF
 

@@ -5,6 +5,10 @@ import io
 import fitz  # PyMuPDF
 import pytesseract
 from PIL import Image
+import os
+
+# Railway/Linux path
+pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
 
 from utils.navigation import render_sidebar
 
