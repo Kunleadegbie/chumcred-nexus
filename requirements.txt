@@ -11,4 +11,7 @@ ffmpeg-python
 python-dotenv
 ghostscript
 PyMuPDF
+easyocr
+opencv-python-headless
+numpy
 

@@ -3,12 +3,11 @@ from PyPDF2 import PdfMerger
 from docx import Document
 import io
 import fitz  # PyMuPDF
-import pytesseract
 from PIL import Image
 import os
+import easyocr
+import numpy as np
 
-# Railway/Linux path
-pytesseract.pytesseract.tesseract_cmd = "/usr/bin/tesseract"
 
 from utils.navigation import render_sidebar
 
@@ -37,25 +36,27 @@ def pdf_to_word_with_ocr(file_bytes):
     doc = Document()
     pdf = fitz.open(stream=file_bytes, filetype="pdf")
 
+    reader = easyocr.Reader(["en"], gpu=False)
+
     total_pages = len(pdf)
     progress = st.progress(0)
 
     for page_number, page in enumerate(pdf, start=1):
-
-        # Step 1: Try normal text extraction
         text = page.get_text("text").strip()
 
-        # Step 2: If no embedded text, use OCR on page image
         if not text:
             try:
                 pix = page.get_pixmap(matrix=fitz.Matrix(2, 2))
                 img_bytes = pix.tobytes("png")
-                image = Image.open(io.BytesIO(img_bytes))
-                text = pytesseract.image_to_string(image).strip()
+                image = Image.open(io.BytesIO(img_bytes)).convert("RGB")
+                image_np = np.array(image)
+
+                results = reader.readtext(image_np, detail=0, paragraph=True)
+                text = "\n".join(results).strip()
+
             except Exception as e:
                 text = f"[OCR failed on page {page_number}: {e}]"
 
-        # Step 3: If still no text, show a clearer note
         if not text:
             text = f"[No readable text could be extracted from page {page_number}]"
 
